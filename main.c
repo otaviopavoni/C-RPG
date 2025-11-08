@@ -15,14 +15,24 @@ struct character {
     int hearts;
     int coins;
     int xp;
+    int level;
 };
 
-void welcome() {
-    printf("\nWelcome to C-RPG. This is intended to be a simple, fast and fun terminal game for RPG fans.\nHere, you'll create your own story by opening doors of a dungeon, collecting coins, buying armour and slashing monsters.\n\nWe wish you good luck!\n");
-}
+char* tips[] = {
+    "\nTip: Buy potions before you're low on health!\n",
+    "\nTip: Running costs coins, but saves hearts!\n",
+    "\nTip: The more you fight, the more XP you get!\n",
+    "\nTip: Explore many doors to find treasures!\n"
+};
 
 void separator() {
-    printf("\n============================================\n");
+    printf("\n========================================================================================\n");
+}
+
+void welcome() {
+    separator();
+    printf("\nWelcome to C-RPG. This is intended to be a simple, fast and fun terminal game for RPG fans.\nHere you'll create your own story by opening doors of a dungeon, collecting coins, buying armour and slashing monsters.\n\nWe wish you good luck!\n");
+    printf("%s", tips[rand() % 4]);
 }
 
 int openDoor() {
@@ -36,20 +46,24 @@ int openDoor() {
 void kickDoor() {
     int random_number = rand() % 100;
     if (random_number <= 25) {
-        printf("\nYou kick the door to the ground!\n");
+        separator();
+        printf("\nYou kick the door to the ground!");
     } else if (random_number <= 50 && random_number > 25) {
-        printf("\nYou slightly open a door!\n");
+        separator();
+        printf("\nYou slightly open a door!");
     } else if (random_number <= 75 && random_number > 50) {
-        printf("\nYou slash another door to the ground!\n");
+        separator();
+        printf("\nYou slash another door to the ground!");
     } else {
-        printf("\nYou explode the door!\n");
+        separator();
+        printf("\nYou explode the door!");
     }
 }
 
 void getCoins(int *coins) {
     int random_number = rand() % 100;
     *coins += random_number;
-    printf("You found %d coins!\n\n", random_number);
+    printf("\nYou found %d coins!\n", random_number);
 }
 
 int fightEnemy() {
@@ -74,31 +88,51 @@ void loseCoins(int *coins) {
     
 }
 
+char* enemy_types[] = {"Goblin", "Skeleton", "Orc", "Zombie"};
+
+void encounterEnemy() {
+    printf("\nA wild %s appears!", enemy_types[rand() % 4]);
+}
+
 void fight(int *hearts, int *xp) {
     int random_number = rand() % 5;
-    *hearts -= random_number;
     *xp += random_number;
 
     separator();
 
+    encounterEnemy();
+
+    int damage = 0;
+
     switch (random_number) {
         case 0:
+            damage = random_number + 1;
+            *hearts -= damage;
             printf("\nMonsters roared, spells blazed—the dungeon trembled as victory screamed through dust.");
             break;
         case 1:
+            damage = random_number + 1;
+            *hearts -= damage;
             printf("\nBlades flashed, monsters fell—echoes of courage rang through the shadowed crypt.");
             break;
         case 2:
-            printf("\nDragons soared, fire rained—only steel and will kept the heroes standing tall.");
+            damage = random_number + 3;
+            *hearts -= damage;
+            printf("\nFire rained—only steel and will kept the heroes standing tall.");
             break;
         case 3:
+            damage = random_number + 2;
+            *hearts -= damage;
             printf("\nZombies swarmed, armour cracked—yet one sword's light cut through the endless night.");
             break;
         case 4:
+            damage = random_number + 2;
+            *hearts -= damage;
             printf("\nSteel clashed, dragons roared—heroes rose from fire and fury, armour blazing, victory claimed.");
             break;
     }
-    printf("\n\nYou lost %d hearts as you tried to fight!\n", random_number);
+    
+    printf("\n\nYou lost %d hearts as you tried to fight!\n", damage);
     printf("You won %d XP as you tried to fight!\n", random_number);
 }
 
@@ -107,6 +141,7 @@ void showStats(struct character p) {
     printf("\nHearts: %d\n", p.hearts);
     printf("Coins: %d\n", p.coins);
     printf("XP: %d\n", p.xp);
+    printf("Level: %d\n", p.level);
 }
 
 int checkHearts(struct character p) {
@@ -133,8 +168,7 @@ void store(int *hearts, int *coins){
         printf("\nDo you buy something from the store?\n1 for WEAK HEARTS POTION /\n2 for HEARTS POTION /\n3 for STRONG HEARTS POTION\n0 for NO /\n\n");
         scanf("%d", &answer);
 
-        switch (answer)
-        {
+        switch (answer) {
         case 1:
             if (*coins >= 50){
                 *hearts += 5;
@@ -175,9 +209,53 @@ void store(int *hearts, int *coins){
     } while (answer != 0);
 }
 
+void deathMessage() {
+    int random_number = rand() % 5;
+    separator();
+    switch (random_number) {
+        case 0:
+            printf("\n********** You die. Your legend ends here... **********\n");
+            separator();
+            break;
+        case 1:
+            printf("\n********** You die. The dungeon claims another soul. **********\n");
+            separator();
+            break;
+        case 2:
+            printf("\n********** Game Over - better luck next time! **********\n");
+            separator();
+            break;
+        case 3:
+            printf("\n********** You die. Your courage was not enough today. **********\n");
+            separator();
+            break;
+        case 4:
+            printf("\n********** You die. Your adventure ends here... **********\n");
+            separator();
+            break;
+    }
+}
+
+void checkLevelUp(struct character *p) {
+    if (p->xp >= p->level * 10) {
+        p->level++;
+        p->hearts += 5;
+        printf("\nCongrats! You've just advanced one level! Your current level: %d\n", p->level);
+    }
+}
+
+void randomEvent(struct character *p) {
+    if (rand() % 8 == 0) {
+        printf("\nYou found a hidden treasure! +30 coins!\n");
+        p->coins += 30;
+    }
+}
+
 int main() {
 
     srand(time(NULL));
+
+    int doors_opened = 0;
 
     welcome();
 
@@ -185,6 +263,7 @@ int main() {
     Player.hearts = 10;
     Player.coins = 0;
     Player.xp = 0;
+    Player.level = 1;
 
     while (1) {
         switch (openDoor()) {
@@ -192,38 +271,20 @@ int main() {
                 return 0;
             case 1:
                 kickDoor();
+                doors_opened++;
+                printf("\nDoors opened: %d.\n", doors_opened);
                 getCoins(&Player.coins);
+                randomEvent(&Player);
                 switch (fightEnemy()) {
                     case 1:
                         fight(&Player.hearts, &Player.xp);
+                        checkLevelUp(&Player);
                         if (checkHearts(Player)){
                             continue;
                         } else {
-                            int random_number = rand() % 5;
-                            separator();
-                            switch (random_number) {
-                                case 0:
-                                    printf("\n********** You die. Your legend ends here... **********\n");
-                                    separator();
-                                    return 0;
-                                case 1:
-                                    printf("\n********** You die. The dungeon claims another soul. **********\n");
-                                    separator();
-                                    return 0;
-                                case 2:
-                                    printf("\n********** Game Over - better luck next time! **********\n");
-                                    separator();
-                                    return 0;
-                                case 3:
-                                    printf("\n********** You die. Your courage was not enough today. **********\n");
-                                    separator();
-                                    return 0;
-                                case 4:
-                                    printf("\n********** You die. Your adventure ends here... **********\n");
-                                    separator();
-                                    return 0;
+                            deathMessage();
+                            return 0;
                             }
-                        }
                         break;
                     case 2:
                         loseCoins(&Player.coins);
@@ -234,6 +295,7 @@ int main() {
                         printf("Type a valid number!");
                         break;
                 }
+                break;
             
             case 2:
                 continue;
